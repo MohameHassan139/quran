@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pdfview/flutter_pdfview.dart';
+
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-// import 'package:path_provider/path_provider.dart';
+
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 void main() {
   runApp(const MyApp());
@@ -38,134 +38,110 @@ class PDFScreen extends StatefulWidget {
 }
 
 class _PDFScreenState extends State<PDFScreen> with WidgetsBindingObserver {
-  // String pdfpath = 'assets/pdf/quran.pdf';
-  File pdfFile =
-      File('assets/pdf/quran.pdf');
-  late Completer<PDFViewController> _controller;
+  PdfViewerController pdfViewerController = PdfViewerController();
+  double zoom = 0.0;
+  TextEditingController controller = TextEditingController();
+  int pageNo = 0;
+  final GlobalKey<SfPdfViewerState> _pdfViewerKey = GlobalKey();
+  late PdfViewerController _pdfViewerController = PdfViewerController();
+  late PdfTextSearchResult _searchResult = PdfTextSearchResult();
 
-  int? pages = 0;
-  int? currentPage = 0;
-  bool isReady = false;
-  String errorMessage = '';
   @override
   void initState() {
-    _controller = Completer<PDFViewController>();
-    print(pdfFile.path);
-    print(pdfFile.runtimeType);
-    print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@');
-    // fromAsset('assets/pdf/quran.pdf', 'quran.pdf').then((f) {
-    //   setState(() {
-    //     pdfpath = f.path;
-    //   });
-    // });
+    _pdfViewerController = PdfViewerController();
+    _searchResult = PdfTextSearchResult();
     super.initState();
   }
 
-  // Future<File> fromAsset(String asset, String filename) async {
-  //   // To open from assets, you can copy them to the app storage folder, and the access them "locally"
-  //   Completer<File> completer = Completer();
-
-  //   try {
-  //     // var dir = await getApplicationDocumentsDirectory();
-  //     File file = File("assets/pdf/quran.pdf");
-  //     var data = await rootBundle.load(asset);
-  //     var bytes = data.buffer.asUint8List();
-  //     await file.writeAsBytes(bytes, flush: true);
-  //     completer.complete(file);
-  //   } catch (e) {
-  //     throw Exception('Error parsing asset file!');
-  //   }
-
-  //   return completer.future;
-  // }
-
   @override
   Widget build(BuildContext context) {
-     print(pdfFile.path);
-    print(pdfFile.runtimeType);
-    print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@');
+    var size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
         title: Text("Document"),
-        actions: <Widget>[
+          actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.share),
-            onPressed: () {},
+            icon: const Icon(
+              Icons.search,
+              // color: Colors.white,
+            ),
+            onPressed: () {
+              setState(() {
+                
+              });
+              _searchResult = _pdfViewerController.searchText('ا',
+                  // searchOption: TextSearchOption.caseSensitive
+                  
+                  );
+              if (kIsWeb) {
+                setState(() {});
+              } else {
+                _searchResult.addListener(() {
+                  if (_searchResult.hasResult) {
+                    setState(() {});
+                  }
+                });
+              }
+            },
+          ),
+          Visibility(
+            visible: _searchResult.hasResult,
+            child: IconButton(
+              icon: const Icon(
+                Icons.clear,
+                // color: Colors.white,
+              ),
+              onPressed: () {
+                setState(() {
+                  _searchResult.clear();
+                });
+              },
+            ),
+          ),
+          Visibility(
+            visible: _searchResult.hasResult,
+            child: IconButton(
+              icon: const Icon(
+                Icons.keyboard_arrow_up,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                _searchResult.previousInstance();
+              },
+            ),
+          ),
+          Visibility(
+            visible: _searchResult.hasResult,
+            child: IconButton(
+              icon: const Icon(
+                Icons.keyboard_arrow_down,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                _searchResult.nextInstance();
+              },
+            ),
           ),
         ],
       ),
-      body: Image.asset("asset/images/Medina.png"),
-      //  Stack(
-      //   children: <Widget>[
-          
-      //     PDFView(
-      //       filePath: pdfFile.path,
-      //       enableSwipe: true,
-      //       swipeHorizontal: true,
-      //       autoSpacing: false,
-      //       pageFling: true,
-      //       pageSnap: true,
-      //       defaultPage: currentPage!,
-      //       fitPolicy: FitPolicy.BOTH,
-      //       preventLinkNavigation:
-      //           false, // if set to true the link is handled in flutter
-      //       onRender: (_pages) {
-      //         setState(() {
-      //           pages = _pages;
-      //           isReady = true;
-      //         });
-      //       },
-      //       onError: (error) {
-      //         setState(() {
-      //           errorMessage = error.toString();
-      //         });
-      //         print(error.toString());
-      //       },
-      //       onPageError: (page, error) {
-      //         setState(() {
-      //           errorMessage = '$page: ${error.toString()}';
-      //         });
-      //         print('$page: ${error.toString()}');
-      //       },
-      //       onViewCreated: (PDFViewController pdfViewController) {
-      //         _controller.complete(pdfViewController);
-      //       },
-      //       onLinkHandler: (String? uri) {
-      //         print('goto uri: $uri');
-      //       },
-      //       onPageChanged: (int? page, int? total) {
-      //         print('page change: $page/$total');
-      //         setState(() {
-      //           currentPage = page;
-      //         });
-      //       },
-      //     ),
-      //     errorMessage.isEmpty
-      //         ? !isReady
-      //             ? Center(
-      //                 child: CircularProgressIndicator(),
-      //               )
-      //             : Container()
-      //         : Center(
-      //             child: Text(errorMessage),
-      //           )
-      //   ],
-      // ),
-     
-      floatingActionButton: FutureBuilder<PDFViewController>(
-        future: _controller.future,
-        builder: (context, AsyncSnapshot<PDFViewController> snapshot) {
-          if (snapshot.hasData) {
-            return FloatingActionButton.extended(
-              label: Text("Go to ${pages! ~/ 2}"),
-              onPressed: () async {
-                await snapshot.data!.setPage(pages! ~/ 2);
-              },
-            );
-          }
+      body: Container(
+        height: size.height,
+        width: size.width,
+        child: SfPdfViewer.asset(
+          'assets/pdf/quran.pdf',
+          controller: pdfViewerController,
+          enableDocumentLinkAnnotation: false,
+          canShowPageLoadingIndicator: true,
+          canShowScrollHead: false,
+          pageLayoutMode: PdfPageLayoutMode.single,
+          pageSpacing: 0,
+          enableDoubleTapZooming: false,
 
-          return Container();
-        },
+        //  controller: _pdfViewerController,
+          currentSearchTextHighlightColor: Colors.yellow.withOpacity(0.6),
+          otherSearchTextHighlightColor: Colors.yellow.withOpacity(0.3),
+          scrollDirection: PdfScrollDirection.horizontal,
+        ),
       ),
     );
   }
